@@ -7,13 +7,28 @@ export function buildChunkMap(compilation) {
   });
 
   const chunkMap = new Map();
-  for (const chunk of compilation.chunks) {
-    for (const file of chunk.files) {
+  for (const chunk of compilation.getStats().toJson().chunks) {
+    for (const [index, file] of chunk.files.entries()) {
       chunkMap.set(
-        `${publicPath}${chunk.name}${path.extname(file)}`,
+        `${publicPath}${chunk.names[index]}${path.extname(file)}`,
         `${publicPath}${file}`
       );
     }
+
+    chunk.modules
+    .filter(moduleObject => moduleObject.assets.length > 0)
+    .forEach(moduleObject => {
+      moduleObject.assets.forEach(asset =>{
+        chunkMap.set(
+            `${publicPath}${asset.replace(
+                path.basename(asset),
+                path.basename(moduleObject.name)
+            )}`,
+            `${publicPath}${asset}`
+        );
+      });
+    });
+
   }
 
   return chunkMap;
